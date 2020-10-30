@@ -5,18 +5,16 @@ import SingleShifts from './components/SingleShifts';
 import { Grid, Container } from 'semantic-ui-react'
 
 function App() {
-    const [users, setUsers] = useState([])
-    const [singleUserShifts, setSingleUserShifts] = useState([])
-    const [selectedUser, setSelectedUser] = useState([])
+    const [selectedUser, setSelectedUser] = useState("")
     const [currentPage, setCurrentPage] = useState("home")
     
 
     const pageChanger = () => {
         switch (currentPage) {
             case "home":
-                return(<Home GoToSingleShifts={GoToSingleShifts}/>)
+                return(<Home GoToSingleShifts={GoToSingleShifts} GetAllUsers={GetAllUsers}/>)
             case "singleShifts":
-                return(<SingleShifts GetSingleShifts={GetSingleShifts} GoToHome={GoToHome} selectedUser={selectedUser}/>)
+                return(<SingleShifts GetSingleShifts={GetSingleShifts} GoToHome={GoToHome} selectedUser={selectedUser} GetAllShifts={GetAllShifts}/>)
             default:
                 break;
         }
@@ -34,24 +32,31 @@ function App() {
 
     const GoToHome = x => {
         setCurrentPage("home")
+        setSelectedUser("")
     }
 
-    // const GetAllUsers = () => {
-    //     //var users = JSON.stringify(x)
-    //     fetch(`http://localhost:3333/users`, {method: "GET"})
-    //     .then(result => {return result.json()})
-    //     .then(
-    //         (result) => {
-    //             console.log("I have been called!")
-    //             setUsers(result)
-    //             console.log(users)
-    //         },
-    //         (error) => {
-    //             console.log(error)
-    //         }
-    //     )
-    //     .catch(err => {console.log(err)})
-    // }
+    const GetAllUsers = async () => {
+        const response = await fetch(`http://localhost:3333/users`, {method: "GET"})
+        if (!response.ok) {
+            const errorMessage = `An error has occured: ${response.status}: ${response.statusText}`
+            console.log(errorMessage)
+            throw new Error(errorMessage)
+        }
+        //do i need another await here though..?
+        const data = await response.json()
+        return data
+    }
+
+    const GetAllShifts = async () => {
+        const response = await fetch(`http://localhost:3333/shifts`, {method: "GET"})
+        if (!response.ok) {
+            const errorMessage = `An error has occured: ${response.status}: ${response.statusText}`
+            console.log(errorMessage)
+            throw new Error(errorMessage)
+        }
+        const data = response.json()
+        return data
+    }
 
     // const GetSingleShifts = (x) => {
     //     var user = JSON.stringify(x)
@@ -81,27 +86,12 @@ function App() {
         const userShifts = await response.json()
         console.log(userShifts.data)
         return userShifts.data
-        // setSingleUserShifts(userShifts)
-        // console.log(singleUserShifts)
-        // GoToSingleShifts()
-        // .then(result => {return result.json()})
-        // .then(
-        //     (result) => {
-        //         setSingleUserShifts(result)
-        //         console.log(singleUserShifts)
-        //         GoToSingleShifts()
-        //     },
-        //     (error) => {
-        //         console.log(error)
-        //     }
-        // )
-        //.catch(err => {console.log(err)})
     }
 
     return (
         <>
             <div className="App-header">
-                <h1>Roster</h1>
+                <h1>{(selectedUser === "") ? "Roster" : selectedUser}</h1>
             </div>
             <Grid textAlign='center' columns={1}>
                 <Grid.Row>

@@ -25,7 +25,7 @@
 }  
 
 .border {
-    border: black solid 10px !important;
+    border: black solid 2px !important;
     /* border-width: 2px !important; */
     font-size: 30px !important;
 }  

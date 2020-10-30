@@ -5,17 +5,10 @@ class Home extends Component {
         data: []
     }
 
-    componentDidMount() {
-        // console.log(this.props.GetAllUsers())
-        // const a = this.props.GetAllUsers()
-        // this.setState({data: a})
-        fetch(`http://localhost:3333/users`, {method: "GET", mode: "cors"})
-        .then(res => {return res.json()})
-        .then(result => {
-            console.log(result)
-            const processedResults = this.ConvertObjToArray(result)
-            this.setState({data: processedResults})})
-        .catch(err => {console.log(err)})
+    async componentDidMount() {
+        const rawResponse = await this.props.GetAllUsers()
+        const response = this.ConvertObjToArray(rawResponse)
+        this.setState({data: response})
     }
 
     ConvertObjToArray = (x) => {
