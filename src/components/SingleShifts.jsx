@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Button, Grid, Segment, Container, Header, Icon } from 'semantic-ui-react'
+import { Button, Grid, Segment, Container, Header } from 'semantic-ui-react'
 import moment from 'moment';
 moment().format();
 
@@ -17,12 +17,14 @@ class SingleShifts extends Component {
         this.setState({shifts: updatedShiftsWithPeriods})
         const allShifts = await this.props.GetAllShifts()
         const updatedAllShiftsWithPeriods =  this.AddDayOrNight(allShifts.data)
+        console.log(updatedAllShiftsWithPeriods)
         this.setState({allShifts: updatedAllShiftsWithPeriods})
     }
 
     //loops through an array to check what type of shift it is. adds a new object property "period"
     AddDayOrNight = (x) => {
-        const newArrayWithDayOrNight = x.map((single => {
+        var newArrayWithDayOrNight = []
+        newArrayWithDayOrNight = x.map((single) => {
             var period;
             //constants to dictate if a shift belongs to day or night
             const lunch = moment("12:00 PM", "LT")
@@ -41,9 +43,9 @@ class SingleShifts extends Component {
             if (staffTimeStart.isAfter(lunch)) {
                 period = "night"
             }
-
             single["period"] = period
-        }))
+            return single
+        })
         return newArrayWithDayOrNight
     }
 
@@ -58,66 +60,76 @@ class SingleShifts extends Component {
         const time_end = this.ConvertTime(x.time_finish, "LT")
         const period = x.period
         return(
-            <Header as="h2" textAlign="left">
-                <Header.Content>
-                    {time_start} to {time_end}
-                <Header.Subheader>
-                    {day}, {period} shift
-                </Header.Subheader>
-                </Header.Content>
-            </Header>
+            <Segment>
+                <Header as="h2" textAlign="left">
+                    <Header.Content>
+                        {time_start} to {time_end}
+                    <Header.Subheader>
+                        {day}, {period} shift
+                    </Header.Subheader>
+                    </Header.Content>
+                </Header>
+            </Segment>
         )
     }
 
-    //THERE IS UNNESSECARY CODE HERE. TAKE IT OUT AND MAKE TWO ARRAYS, DAY OR NIGHT.
-    //x is the current shift and y is the array of ALL shifts
-    FormatStaffOnShift = (x, y) => {
+
+    //x is the current shift and the second param is ENTIRE array of shifts stored in the db.
+    FormatStaffOnShift = (x, allShifts) => {
+        //staff that are working on the same DAY, but may not necessarily same shift
         var arrayOfSameDay = []
-        var arrayOfSameShift = []
-        var day = false
-        var night = false
-        const lunch = moment("12:00 PM", "LT")
-        const dinner = moment("6:00 PM", "LT")
+        var arraySeperatedByPeriod;
 
         //get the date of the current shift
         const date1 = this.ConvertTime(x.day, "MMM Do")
         //making an array of all OTHER shifts that land on the SAME day irrespective of night/day.
-        for (let j=0; j<y.length; j++) {
-            const date2 = this.ConvertTime(y[j].day, "MMM Do")
+        for (let i=0; i<allShifts.length; i++) {
+            const date2 = this.ConvertTime(allShifts[i].day, "MMM Do")
             if (date1 === date2) {
-                arrayOfSameDay.push(y[j])
+                arrayOfSameDay.push(allShifts[i])
             }
         }
+        
+        var a = arrayOfSameDay.filter((x) => {
+            return x.period.includes("day")
+        })
+        a = a.map((x) => {
+            return x.staff_name
+        })
+        a = a.join(", ")
 
-        //the staff's starting/finishing time in HH:mm a/pm format
-        const staffTimeStart = moment(this.ConvertTime(x.time_start, "LT"), "LT")
-        const staffTimeFinish = moment(this.ConvertTime(x.time_finish, "LT"), "LT")
+        var b = arrayOfSameDay.filter((x) => {
+            return x.period.includes("night")
+        })
+        b = b.map((x) => {
+            return x.staff_name
+        })
+        b = b.join(", ")
 
-        if (staffTimeStart.isSameOrBefore(lunch) && staffTimeFinish.isSameOrBefore(dinner)) {
-            console.log("ITS A DAY SHIFT")
-            day = true
-        }
-        if (staffTimeStart.isSameOrBefore(lunch) && staffTimeFinish.isAfter(dinner)) {
-            console.log("ITS A DUO SHIFT")
-            day = true
-            night = true
-        }
-        if (staffTimeStart.isAfter(lunch)) {
-            console.log("ITS A NIGHT SHIFT")
-            night = true
-        }
-
-        for (let i=0; i<arrayOfSameDay.length; i++) {
-            const time_start = moment(this.ConvertTime(arrayOfSameDay[i].time_start, "LT"), "LT")
-            if (day) {
-                if (time_start.isSameOrBefore(lunch)) arrayOfSameShift.push(arrayOfSameDay[i].staff_name)
-            }
-            if (night) {
-                if (time_start.isAfter(lunch)) arrayOfSameShift.push(arrayOfSameDay[i].staff_name)
-            }
-        }
-
-        return arrayOfSameShift.join(", ")
+        if (x.period.includes("day") && x.period.includes("night")) return(
+            <Segment.Group>
+                <Segment>
+                    <Header>Day team</Header>
+                    {a}
+                </Segment>
+                <Segment>
+                    <Header>Night team</Header>
+                    {a}
+                </Segment>
+            </Segment.Group>
+        )
+        if (x.period.includes("day")) return(
+            <Segment>
+                <Header>Day team</Header>
+                {a}
+            </Segment>
+        )
+        if (x.period.includes("night")) return(
+            <Segment>
+                <Header>Night team</Header>
+                {b}
+            </Segment>
+        )
     }
 
     LoopingShifts = () => {
@@ -130,9 +142,9 @@ class SingleShifts extends Component {
                         </Container>
                     </Grid.Column>
                     <Grid.Column className="border">
-                        <Segment>
+                        <Container>
                             {this.FormatStaffOnShift(x, this.state.allShifts)}
-                        </Segment>
+                        </Container>
                     </Grid.Column>
                 </Grid.Row>
             )

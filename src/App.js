@@ -19,6 +19,7 @@ function App() {
                 break;
         }
     }
+    
     useEffect(() => {
         console.log('mounted');
         console.log(selectedUser)
@@ -55,6 +56,7 @@ function App() {
             throw new Error(errorMessage)
         }
         const data = response.json()
+        console.log(data)
         return data
     }
 
